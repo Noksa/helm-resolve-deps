@@ -23,6 +23,5 @@ helm plugin update resolve-deps
 
 ## Usage
 ```
-helm resolve-deps .
+helm resolve-deps directory_with_a_chart
 ```
-Currently it works only from the chart's directory. So change directory to a chart and run it.
