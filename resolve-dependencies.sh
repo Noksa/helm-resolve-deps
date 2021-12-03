@@ -3,7 +3,7 @@
 function resolve_deps() {
   rm -rf "${1}/charts" "${1}/tmpcharts" "${1}/Chart.lock"
   for dep in $(helm dep list "${1}" | grep "file://" | cut -f 3 | sed s#file:/#.#); do
-    resolve_deps "${dep}"
+    resolve_deps "${1}/${dep}"
   done
 
   echo "Running 'helm dep up' in '${1}'"
