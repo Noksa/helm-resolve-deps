@@ -8,6 +8,7 @@ function usage() {
 
     FLAGS:
       -u[--unpack-dependencies] - untar/unpack all (including external) dependent charts. They will be present as directories instead of .tgz archieves inside chartrs/ directory
+      -c[--clean] - remove charts, tmpcharts directories and Chart.lock file in each chart before running the dependency update command
       All flags from 'helm dependency update' command can be passed as flags to the plugin's command
 
     Examples:
@@ -23,7 +24,9 @@ trap 'usage' err
 function resolve_deps() {
   local CHART_DIR="${1}"
   shift
-  rm -rf "${CHART_DIR}/charts" "${CHART_DIR}/tmpcharts" "${CHART_DIR}/Chart.lock"
+  if [[ ${CLEAN} == true ]]; then
+    rm -rf "${CHART_DIR}/charts" "${CHART_DIR}/tmpcharts" "${CHART_DIR}/Chart.lock"
+  fi
   for dep in $(helm dep list "${CHART_DIR}" | grep "file://" | cut -f 3 | sed s#file:/#.#); do
     resolve_deps "${CHART_DIR}/${dep}" $@
   done
@@ -31,7 +34,7 @@ function resolve_deps() {
   echo "Running 'helm dep up' in '${CHART_DIR}'"
   helm dep up "${CHART_DIR}" $@
 
-  if [[ -d "${CHART_DIR}"/charts && $UNTAR_CHARTS == true ]]; then
+  if [[ -d "${CHART_DIR}"/charts && ${UNTAR_CHARTS} == true ]]; then
     for archive in $(find "${CHART_DIR}/charts" -maxdepth 1 -name "*.tgz"); do
       tar xzf "${archive}" -C "${CHART_DIR}/charts"
       rm -rf "${archive}"
@@ -49,6 +52,7 @@ else
   shift
 fi
 UNTAR_CHARTS=false
+CLEAN=false
 ARGUMENTS=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -60,6 +64,10 @@ while [[ $# -gt 0 ]]; do
        usage
        shift
        exit 0
+    ;;
+    -c | --clean)
+      CLEAN=true
+      shift
     ;;
     *)
       ARGUMENTS="${ARGUMENTS} ${1}"
