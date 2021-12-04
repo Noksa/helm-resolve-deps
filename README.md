@@ -20,6 +20,8 @@ Moreover in this case you are able to edit dependent charts right inside `charts
 
 It can be helpful for debugging purposes.
 
+Also the plugin has `-c|--clean` flag which allows you to remove charts, tmpcharts directories and Chart.lock file automatically.
+
 ---
 
 ## Installation
