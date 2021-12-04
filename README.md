@@ -1,6 +1,6 @@
 # helm-resolve-deps
 
-### A Helm plugin to resolve local and remote dependencies in a proper way
+### A Helm plugin to resolve local dependencies in a proper way
 
 If you have local charts that have dependencies as `file://` and they also have other local/external chain dependencies than you probably want to resolve all local chain dependencies automatically. 
 
