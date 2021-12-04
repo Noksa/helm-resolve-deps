@@ -8,7 +8,7 @@ function usage() {
 
     FLAGS:
       -u[--unpack-dependencies] - untar/unpack all (including external) dependent charts. They will be present as directories instead of .tgz archieves inside chartrs/ directory
-      -c[--clean] - remove charts, tmpcharts directories and Chart.lock file in each chart before running the dependency update command
+      -c[--clean]               - remove charts, tmpcharts directories and Chart.lock file in each chart before running the dependency update command
       All flags from 'helm dependency update' command can be passed as flags to the plugin's command
 
     Examples:
