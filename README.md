@@ -57,9 +57,10 @@ This plugin has its own flags. You can pass them in addition to `helm dep up` fl
 
 ---
 
-## Examples:
+## A few examples:
 ```
 helm resolve-deps . --skip-refresh
-helm resolve-deps 
+helm resolve-deps --clean
 helm resolve-deps ~/charts/my-chart --skip-refresh --unpack-dependencies
+helm resolve-deps ~/charts/my-chart --skip-refresh --unpack-dependencies --clean
 ```
