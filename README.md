@@ -6,6 +6,8 @@ If you have local charts that have dependencies as `file://` and they also have 
 
 This plugin does it for you.
 
+#### This plugin requires Helm3. It wasn't tested with Helm2
+
 ## Installation
 
 ```
