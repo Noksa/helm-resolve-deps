@@ -2,7 +2,7 @@
 
 ### A Helm plugin to properly resolve local chain dependencies in charts
 
-If you have charts that have 'local' dependencies (charts that have repository starts with `file://`) and they also may have other local/external chain dependencies than you probably want to resolve all of those chain dependencies automatically and in a proper way. 
+If you have charts that have 'local' dependencies (charts that have repository starts with `file://`) and those dependencies also may have other local/external chain dependencies than you probably want to resolve all of those chain dependencies automatically and in a proper way. 
 
 ---
 This plugin:
