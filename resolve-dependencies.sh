@@ -49,7 +49,8 @@ else
   shift
 fi
 UNTAR_CHARTS=false
-while true; do
+ARGUMENTS=""
+while [[ $# -gt 0 ]]; do
   case "$1" in
     -u | --unpack-dependencies)
        UNTAR_CHARTS=true
@@ -60,11 +61,12 @@ while true; do
        shift
        exit 0
     ;;
-    *) break
+    *)
+      ARGUMENTS="${ARGUMENTS} ${1}"
+      shift
     ;;
   esac
 done
-
 if [[ $UNTAR_CHARTS == true ]]; then
   if ! command -v tar &>/dev/null; then
     echo "tar program wasn't found. Install it first." >&2
@@ -73,4 +75,4 @@ if [[ $UNTAR_CHARTS == true ]]; then
 fi
 
 echo "Resolving dependencies..."
-resolve_deps "${MAINCHART_DIR}" $@
+resolve_deps "${MAINCHART_DIR}" ${ARGUMENTS}
