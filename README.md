@@ -6,9 +6,6 @@ If you have local charts that have dependencies as `file://` and they also have 
 
 This plugin does it for you.
 
-**Note** that this plugin also does `untar` so all subcharts will be unpacked as directories.
-If it is not convenient let me know and I'll add a flag to enable/disable this feature.
-
 ## Installation
 
 ```
@@ -22,6 +19,24 @@ helm plugin update resolve-deps
 
 
 ## Usage
+Run this command to receive all available options:
 ```
-helm resolve-deps directory_with_a_chart
+helm resolve-deps -h
 ```
+You can pass all flags from `helm dependency update` command to the plugin's command.
+
+They  all will be substituted to `helm dependency update`.
+
+Examples:
+```
+helm resolve-deps . --skip-refresh
+helm resolve-deps 
+helm resolve-deps ~/charts/my-chart --skip-refresh --unpack-dependencies
+```
+
+## Custom flags
+This plugin has its own flags. You can pass them in addition to `helm dep up` flags or without them.
+```
+-u[--unpack-dependencies] - untar/unpack dependent charts. They will be present as directories instead of .tgz archieves
+```
+
