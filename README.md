@@ -52,6 +52,7 @@ They  all will be substituted to `helm dependency update`.
 This plugin has its own flags. You can pass them in addition to `helm dep up` flags or without them.
 ```
 -u[--unpack-dependencies] - untar/unpack dependent charts. They will be present as directories instead of .tgz archieves
+-c[--clean]               - remove charts, tmpcharts directories and Chart.lock file in each chart before running the dependency update command
 ```
 
 ---
