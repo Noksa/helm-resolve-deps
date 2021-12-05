@@ -22,6 +22,8 @@ It can be helpful for debugging purposes.
 
 Also the plugin has `-c|--clean` flag which allows you to remove charts, tmpcharts directories and Chart.lock file automatically.
 
+
+And of course because the plugin does proper resolution of local chain dependencies.
 ---
 
 ## Installation
