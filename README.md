@@ -20,6 +20,11 @@ Moreover in this case you are able to edit dependent charts right inside `charts
 
 It can be helpful for debugging purposes.
 
+Also the plugin has `-c|--clean` flag which allows you to remove charts, tmpcharts directories and Chart.lock file automatically.
+
+
+And of course because the plugin does proper resolution of local chain dependencies.
+
 ---
 
 ## Installation
@@ -59,10 +64,11 @@ This plugin has its own flags. You can pass them in addition to `helm dep up` fl
 
 ---
 
-## Examples:
+## A few examples:
 ```
 helm resolve-deps . --skip-refresh
-helm resolve-deps 
+helm resolve-deps --clean
 helm resolve-deps ~/charts/my-chart --skip-refresh --unpack-dependencies
+helm resolve-deps ~/charts/my-chart --skip-refresh --unpack-dependencies --clean
 helm resolve-deps --skip-refresh-in my-chart1,my-second-chart
 ```
