@@ -51,8 +51,10 @@ They  all will be substituted to `helm dependency update`.
 ## Custom flags
 This plugin has its own flags. You can pass them in addition to `helm dep up` flags or without them.
 ```
--u[--unpack-dependencies] - untar/unpack dependent charts. They will be present as directories instead of .tgz archieves
--c[--clean]               - remove charts, tmpcharts directories and Chart.lock file in each chart before running the dependency update command
+-u[--unpack-dependencies]     - untar/unpack dependent charts. They will be present as directories instead of .tgz archieves
+-c[--clean]                   - remove charts, tmpcharts directories and Chart.lock file in each chart before running the dependency update command
+--skip-refresh-in name1,name2 - skip fetching updates from helm repositories before running 'helm dep up' in specific charts (pass their names in the argument)
+                                Use ',' as delimiter if you want to specify more than one chart
 ```
 
 ---
@@ -62,4 +64,5 @@ This plugin has its own flags. You can pass them in addition to `helm dep up` fl
 helm resolve-deps . --skip-refresh
 helm resolve-deps 
 helm resolve-deps ~/charts/my-chart --skip-refresh --unpack-dependencies
+helm resolve-deps --skip-refresh-in my-chart1,my-second-chart
 ```
