@@ -4,6 +4,8 @@
 
 If you have charts that have 'local' dependencies (charts that have repository starts with `file://`) and those dependencies also may have other local/external chain dependencies than you probably want to resolve all of those chain dependencies automatically and in a proper way. 
 
+Inspired by https://github.com/helm/helm/issues/2247
+
 ---
 This plugin:
 * Does it for you.
