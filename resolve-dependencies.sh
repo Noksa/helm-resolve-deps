@@ -52,7 +52,7 @@ function resolve_deps() {
 
   if [[ -d "${CHART_DIR}"/charts && ${UNTAR_CHARTS} == true ]]; then
     for archive in $(find "${CHART_DIR}/charts" -maxdepth 1 -name "*.tgz"); do
-      tar xzf "${archive}" -C "${CHART_DIR}/charts"
+      tar xzfm "${archive}" -C "${CHART_DIR}/charts"
       rm -rf "${archive}"
     done
   fi
