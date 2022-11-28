@@ -7,7 +7,7 @@ version="$(cat plugin.yaml | grep "version" | cut -d '"' -f 2)"
 echo "Installing resolve-deps v${version} ..."
 
 # Find correct archive name
-unameOut="$(uname -s | awk '{print tolower($0)}')"
+unameOut="$(uname -s)"
 
 case "${unameOut}" in
     Linux*)     os=linux;;
