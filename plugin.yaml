@@ -1,5 +1,5 @@
 name: "resolve-deps"
-version: "0.0.2"
+version: "1.0.0"
 usage: "Resolve local and remote dependencies in a proper way"
 command: "$HELM_PLUGIN_DIR/resolve-dependencies.sh"
 useTunnel: false
