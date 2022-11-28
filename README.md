@@ -35,6 +35,11 @@ And of course because the plugin does proper resolution of local chain dependenc
 helm plugin install --version "main" https://github.com/Noksa/helm-resolve-deps.git
 ```
 
+To install old (bash-style) version, use the following command:
+```shell
+helm plugin install --version "v1.0.0" https://github.com/Noksa/helm-resolve-deps.git
+```
+
 ---
 
 ## Upgrade
