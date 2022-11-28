@@ -1,9 +1,6 @@
 name: "resolve-deps"
-version: "2.0.0"
-usage: "Resolve local and remote dependencies in a proper, fast, concurrent way"
-command: "$HELM_PLUGIN_DIR/bin/resolve-deps"
+version: "0.0.2"
+usage: "Resolve local and remote dependencies in a proper way"
+command: "$HELM_PLUGIN_DIR/resolve-dependencies.sh"
 useTunnel: false
 ignoreFlags: false
-hooks:
-  install: "cd $HELM_PLUGIN_DIR; ./scripts/install.sh"
-  upgrade: "cd $HELM_PLUGIN_DIR; ./scripts/install.sh"
