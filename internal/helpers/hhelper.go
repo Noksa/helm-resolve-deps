@@ -88,10 +88,11 @@ func updateRepositories(shouldSkip bool) error {
 var resolvedDeps []string
 
 func resolveDeps(chart *models.MiniHelmChart, chartPath string, wp *workpool.WorkPool, opts models.HelmResolveDepsOptions) (mErr error) {
-	chartMutex := getMutex(fmt.Sprintf("%v-%v", chart.Name, chart.Repository))
+	fullName := fmt.Sprintf("%v-%v-%v", chart.Name, chart.Version, chart.Repository)
+	chartMutex := getMutex(fullName)
 	chartMutex.Lock()
 	defer chartMutex.Unlock()
-	if slices.Contains(resolvedDeps, chart.Name) {
+	if slices.Contains(resolvedDeps, fullName) {
 		return nil
 	}
 	errMutex := sync.Mutex{}
@@ -149,7 +150,7 @@ func resolveDeps(chart *models.MiniHelmChart, chartPath string, wp *workpool.Wor
 		}
 	}
 	if len(chart.Dependencies) == 0 {
-		resolvedDeps = append(resolvedDeps, chart.Name)
+		resolvedDeps = append(resolvedDeps, fullName)
 		return nil
 	}
 
@@ -163,7 +164,7 @@ func resolveDeps(chart *models.MiniHelmChart, chartPath string, wp *workpool.Wor
 		shSession.Command("helm", args)
 		return shSession.Run()
 	}())
-	resolvedDeps = append(resolvedDeps, chart.Name)
+	resolvedDeps = append(resolvedDeps, fullName)
 	return mErr
 }
 
