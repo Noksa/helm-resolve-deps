@@ -30,7 +30,7 @@ func main() {
 	pflag.Parse()
 	chartPath := "."
 	passedArgs := pflag.Args()
-	if len(passedArgs) > 1 {
+	if len(passedArgs) >= 1 {
 		chartPath = passedArgs[0]
 	}
 	if len(passedArgs) > 1 {
