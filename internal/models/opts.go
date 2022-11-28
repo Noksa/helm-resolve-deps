@@ -6,4 +6,5 @@ type HelmResolveDepsOptions struct {
 	SkipRefresh         bool
 	SkipRefreshInCharts []string
 	Threads             int
+	Args                []string
 }

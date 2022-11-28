@@ -4,8 +4,10 @@ import (
 	"github.com/noksa/helm-resolve-deps/internal/helpers"
 	"github.com/noksa/helm-resolve-deps/internal/models"
 	"github.com/spf13/pflag"
+	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 )
 
 func main() {
@@ -28,9 +30,19 @@ func main() {
 	pflag.Parse()
 	chartPath := "."
 	passedArgs := pflag.Args()
-	if len(passedArgs) == 1 {
+	if len(passedArgs) > 1 {
 		chartPath = passedArgs[0]
 	}
+	if len(passedArgs) > 1 {
+		opts.Args = passedArgs[1:]
+	}
+	if strings.HasPrefix(chartPath, "~") {
+		homeDir, err := os.UserHomeDir()
+		helpers.Must(err)
+		chartPath = chartPath[1:]
+		chartPath = filepath.Join(homeDir, chartPath)
+	}
+	chartPath = filepath.Clean(chartPath)
 	absPath, err := filepath.Abs(chartPath)
 	helpers.Must(err)
 	chartPath = absPath

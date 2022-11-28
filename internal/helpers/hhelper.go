@@ -105,6 +105,11 @@ func resolveDeps(chart *models.MiniHelmChart, chartPath string, wp *workpool.Wor
 	if opts.SkipRefresh || slices.Contains(opts.SkipRefreshInCharts, chart.Name) {
 		args = append(args, "--skip-refresh")
 	}
+	for _, additionalArg := range opts.Args {
+		if !slices.Contains(args, additionalArg) {
+			args = append(args, additionalArg)
+		}
+	}
 	for _, dep := range chart.Dependencies {
 		newOptions := models.HelmResolveDepsOptions{
 			SkipRefresh: true,
