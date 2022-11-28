@@ -102,7 +102,7 @@ func resolveDeps(chart *models.MiniHelmChart, chartPath string, wp *workpool.Wor
 		_ = os.RemoveAll(cleanJoin(chartPath, "tmpcharts"))
 		_ = os.RemoveAll(cleanJoin(chartPath, "Chart.lock"))
 	}
-	if opts.SkipRefresh || slices.Contains(opts.SkipRefreshInCharts, chart.Name) {
+	if opts.SkipRefresh {
 		args = append(args, "--skip-refresh")
 	}
 	for _, dep := range chart.Dependencies {
@@ -163,6 +163,7 @@ func resolveDeps(chart *models.MiniHelmChart, chartPath string, wp *workpool.Wor
 }
 
 func ResolveDependencies(chartPath string, opts models.HelmResolveDepsOptions) error {
+	t := time.Now()
 	chart, err := LoadChartByPath(chartPath)
 	if err != nil {
 		return multierr.Append(err, fmt.Errorf("ensure that the chart directory (%v) exists", filepath.Dir(chartPath)))
@@ -171,11 +172,9 @@ func ResolveDependencies(chartPath string, opts models.HelmResolveDepsOptions) e
 	if err != nil {
 		return err
 	}
-	t := time.Now()
 	wp := workpool.New(opts.Threads)
-	if !opts.SkipRefresh {
-		opts.SkipRefresh = true
-	}
+	// do not fetch any updates because we already might do it in updateRepositories
+	opts.SkipRefresh = true
 	fmt.Printf("Resolving dependencies in %v chart ...\n", chart.Name)
 	err = resolveDeps(chart, chartPath, wp, opts)
 	if err != nil {
