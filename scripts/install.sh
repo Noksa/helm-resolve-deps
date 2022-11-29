@@ -23,6 +23,10 @@ if [ "$arch" = "aarch64" ]; then
   arch="arm64"
 fi
 
+if [ "$arch" = "x86_64" ]; then
+  arch="amd64"
+fi
+
 url="https://github.com/Noksa/helm-resolve-deps/releases/download/v${version}/resolve-deps_${version}_${os}_${arch}.tar.gz"
 
 if [ "$url" = "" ]
