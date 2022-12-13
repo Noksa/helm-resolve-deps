@@ -18,6 +18,8 @@ func main() {
 	pflag.BoolVarP(&opts.Untar, "untar", "u", false, "untar/unpack all (including external) dependent charts. They will be present as directories instead of .tgz archieves inside chartrs/ directory")
 	pflag.StringSliceVar(&opts.SkipRefreshInCharts, "skip-refresh-in", []string{}, "skip fetching updates from helm repositories before resolving dependencies in specific charts (pass their names in the argument). Use ',' as delimiter if you want to specify more than one chart."+
 		"")
+	help := false
+	pflag.BoolVarP(&help, "help", "h", false, "show usage")
 	_ = pflag.CommandLine.MarkDeprecated("unpack-dependencies", "Use -u|--untar instead")
 	cpuDefault := runtime.NumCPU() - 1
 	if runtime.GOOS == "darwin" && runtime.GOARCH == "arm64" {
@@ -28,6 +30,10 @@ func main() {
 	}
 	pflag.IntVar(&opts.Threads, "threads", cpuDefault, "Number of CPUs to be used")
 	pflag.Parse()
+	if help {
+		pflag.Usage()
+		os.Exit(0)
+	}
 	chartPath := "."
 	passedArgs := pflag.Args()
 	if len(passedArgs) >= 1 {
