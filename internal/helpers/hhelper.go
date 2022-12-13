@@ -128,26 +128,32 @@ func resolveDeps(chart *models.MiniHelmChart, chartPath string, wp *workpool.Wor
 			}
 			if wp != nil {
 				wp.Do(func() error {
-					err := resolveDeps(dependantChart, dependantChartPath, nil, newOptions)
+					depErr := resolveDeps(dependantChart, dependantChartPath, nil, newOptions)
 					errMutex.Lock()
-					mErr = multierr.Append(mErr, err)
+					if depErr != nil {
+						mErr = multierr.Append(mErr, fmt.Errorf("got an error while was resolving deps for %v chart", dependantChart.Name))
+					}
+					mErr = multierr.Append(mErr, depErr)
 					errMutex.Unlock()
-					return mErr
+					return nil
 				})
 			} else {
-				err := resolveDeps(dependantChart, dependantChartPath, nil, newOptions)
+				depErr := resolveDeps(dependantChart, dependantChartPath, nil, newOptions)
 				errMutex.Lock()
-				mErr = multierr.Append(mErr, err)
+				if depErr != nil {
+					mErr = multierr.Append(mErr, fmt.Errorf("got an error while was resolving deps for %v chart", dependantChart.Name))
+				}
+				mErr = multierr.Append(mErr, depErr)
 				errMutex.Unlock()
 				continue
 			}
 		}
 	}
 	if wp != nil {
-		mErr = wp.Wait()
-		if mErr != nil {
-			return mErr
-		}
+		_ = wp.Wait()
+	}
+	if mErr != nil {
+		return mErr
 	}
 	if len(chart.Dependencies) == 0 {
 		resolvedDeps = append(resolvedDeps, fullName)
@@ -162,7 +168,11 @@ func resolveDeps(chart *models.MiniHelmChart, chartPath string, wp *workpool.Wor
 		shSession.Stdout = b
 		shSession.SetDir(chartPath)
 		shSession.Command("helm", args)
-		return shSession.Run()
+		miniErr := shSession.Run()
+		if miniErr != nil {
+			return fmt.Errorf("%v, %v", miniErr.Error(), b.String())
+		}
+		return nil
 	}())
 	resolvedDeps = append(resolvedDeps, fullName)
 	return mErr
