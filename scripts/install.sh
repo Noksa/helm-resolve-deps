@@ -13,7 +13,7 @@ case "${unameOut}" in
     Linux*)     os=linux;;
     Darwin*)    os=darwin;;
 #    CYGWIN*)    os=cygwin;;
-#    MINGW*)     os=windows;;
+    MINGW*)     os=windows;;
     *)          os="UNKNOWN:${unameOut}"
 esac
 
