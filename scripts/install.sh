@@ -18,7 +18,7 @@ esac
 
 arch=$(uname -m)
 
-if [ "$arch" == "x86_64" ]; then
+if [ "$arch" = "x86_64" ]; then
   arch="amd64"
 else
   arch="arm64"
