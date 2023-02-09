@@ -6,7 +6,6 @@ cd $HELM_PLUGIN_DIR
 version="$(cat plugin.yaml | grep "version" | cut -d '"' -f 2)"
 echo "Installing resolve-deps v${version} ..."
 
-# Find correct archive name
 unameOut="$(uname -s)"
 
 case "${unameOut}" in
@@ -19,20 +18,17 @@ esac
 
 arch=$(uname -m)
 
-if [ "$arch" = "aarch64" ]; then
-  arch="arm64"
-fi
-
-if [ "$arch" = "x86_64" ]; then
+if [ "$arch" == "x86_64" ]; then
   arch="amd64"
+else
+  arch="arm64"
 fi
 
 url="https://github.com/Noksa/helm-resolve-deps/releases/download/v${version}/resolve-deps_${version}_${os}_${arch}.tar.gz"
 
-if [ "$url" = "" ]
-then
-    echo "Unsupported OS / architecture: ${os}_${arch}"
-    exit 1
+if [ "$url" = "" ]; then
+  echo "Unsupported OS / architecture: ${os}_${arch}"
+  exit 1
 fi
 
 filename="resolve-deps_${version}.tar.gz"
@@ -44,15 +40,13 @@ if [ -z "$(command -v tar)" ]; then
 fi
 
 # Download archive
-if [ -n "$(command -v curl)" ]
-then
-    curl -sSL "$url" -o "$filename"
-elif [ -n "$(command -v wget)" ]
-then
-    wget -q "$url" -o "$filename"
+if [ -n "$(command -v curl)" ]; then
+  curl -sSL "$url" -o "$filename"
+elif [ -n "$(command -v wget)" ]; then
+  wget -q "$url" -o "$filename"
 else
-    echo "Need curl or wget"
-    exit 1
+  echo "Need curl or wget"
+  exit 1
 fi
 
 trap 'rm -rf $filename' EXIT
@@ -67,4 +61,4 @@ fi
 
 echo "resolve-deps ${version} has been installed"
 echo
-echo "See https://github.com/Noksa/helm-resolve-deps for usage"
+echo "Check https://github.com/Noksa/helm-resolve-deps for usage"
