@@ -11,7 +11,7 @@ for A in $ARCH; do
     if [[ "$O" == "windows" ]]; then
       output="resolve-deps.exe"
     fi
-    GOARCH=$A GOOS=$O go build -o "${output}" ../cmd/resolve_deps.go
+    GOARCH=$A GOOS=$O go build -ldflags "-X main.version=${version}" -o "${output}" ../cmd/resolve_deps.go
     tar -czvf "resolve-deps_${version}_${O}_${A}.tar.gz" "${output}"
     #rm -rf "${output}"
   done

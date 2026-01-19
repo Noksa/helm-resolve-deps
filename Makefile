@@ -3,12 +3,19 @@ SHELL = /usr/bin/env bash -o pipefail
 
 .DEFAULT_GOAL = help
 
+VERSION := $(shell grep 'version:' plugin.yaml | cut -d '"' -f 2)
+LDFLAGS := -X main.version=$(VERSION)
+
 ##@ Help & Information
 .PHONY: help
 help: ## Show this help message with available targets
 	@awk 'BEGIN {FS = ":.*##"; printf "\n🚀 \033[1;34mHelm In Pod - Helm plugin to run commands inside pods\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1;33m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
 ##@ Development
+.PHONY: build
+build: ## Build the binary with version injection
+	@go build -ldflags "$(LDFLAGS)" -o helm-resolve-deps ./cmd/resolve_deps.go
+
 .PHONY: lint
 lint: ## Run linters and formatters
 	@./scripts/check.sh
