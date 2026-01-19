@@ -1,5 +1,5 @@
 name: "resolve-deps"
-version: "2.0.0"
+version: "2.0.1"
 usage: "Resolve local and remote dependencies in a proper, fast, concurrent way"
 command: "$HELM_PLUGIN_DIR/bin/resolve-deps"
 useTunnel: false

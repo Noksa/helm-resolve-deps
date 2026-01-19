@@ -1,13 +1,14 @@
 package main
 
 import (
-	"github.com/noksa/helm-resolve-deps/internal/helpers"
-	"github.com/noksa/helm-resolve-deps/internal/models"
-	"github.com/spf13/pflag"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/noksa/helm-resolve-deps/internal/helpers"
+	"github.com/noksa/helm-resolve-deps/internal/models"
+	"github.com/spf13/pflag"
 )
 
 func main() {

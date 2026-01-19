@@ -2,13 +2,6 @@ package helpers
 
 import (
 	"fmt"
-	"github.com/codeskyblue/go-sh"
-	"github.com/noksa/helm-resolve-deps/internal/models"
-	"github.com/patrickmn/go-cache"
-	"github.com/xxjwxc/gowp/workpool"
-	"go.uber.org/multierr"
-	"golang.org/x/exp/slices"
-	"gopkg.in/yaml.v3"
 	"io"
 	"io/fs"
 	"os"
@@ -16,6 +9,14 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/codeskyblue/go-sh"
+	"github.com/noksa/helm-resolve-deps/internal/models"
+	"github.com/patrickmn/go-cache"
+	"github.com/xxjwxc/gowp/workpool"
+	"go.uber.org/multierr"
+	"golang.org/x/exp/slices"
+	"gopkg.in/yaml.v3"
 )
 
 var c = cache.New(time.Minute*5, time.Minute*4)
@@ -119,8 +120,8 @@ func resolveDeps(chart *models.MiniHelmChart, chartPath string, wp *workpool.Wor
 			Untar:       opts.Untar,
 		}
 		dep := dep
-		if strings.HasPrefix(dep.Repository, "file://") {
-			dependantChartPath := filepath.Clean(fmt.Sprintf("%v/%v", chartPath, strings.TrimPrefix(dep.Repository, "file://")))
+		if after, ok := strings.CutPrefix(dep.Repository, "file://"); ok {
+			dependantChartPath := filepath.Clean(fmt.Sprintf("%v/%v", chartPath, after))
 			dependantChart, err := LoadChartByPath(dependantChartPath)
 			if err != nil {
 				mErr = multierr.Append(mErr, err)

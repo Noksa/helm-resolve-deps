@@ -1,2 +1,6 @@
 .idea/
 generated/
+
+helm-resolve-deps
+helm-resolve-deps.exe
+coverage.out

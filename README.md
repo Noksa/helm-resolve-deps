@@ -1,92 +1,170 @@
-# helm-resolve-deps
+# 🔗 helm-resolve-deps
 
-### A Helm plugin to properly resolve local chain dependencies in charts
-
-If you have charts that have 'local' dependencies (charts that have repository starts with `file://`) and those dependencies also may have other local/external chain dependencies than you probably want to resolve all of those chain dependencies automatically and in a proper way. 
-
-Inspired by https://github.com/helm/helm/issues/2247
-
----
-This plugin:
-* Does it for you.
-* Requires Helm3
-* Can be used as replacement for default `helm dep up` command.
+> ⚡ A Helm plugin that properly resolves local chain dependencies in charts
 
 ---
 
-Why should you use it as replacement for `helm dep up`?
+## 🤔 Why?
 
-Because it has the `-u|--untar` flag which allows you to automatically unpack all dependent charts and see what manifests are inside them. 
+Helm's built-in `helm dependency update` doesn't handle transitive local dependencies well. If you have charts with `file://` dependencies that themselves have dependencies, Helm won't resolve the entire chain correctly.
 
-Moreover in this case you are able to edit dependent charts right inside `charts/` directory. 
+**helm-resolve-deps** solves this by recursively resolving all local dependencies in the correct order.
 
-It can be helpful for debugging purposes.
+Inspired by [helm/helm#2247](https://github.com/helm/helm/issues/2247)
 
-Also the plugin has `-c|--clean` flag which allows you to remove charts, tmpcharts directories and Chart.lock file automatically.
+> 📝 **Note**: I've created [an issue](https://github.com/helm/helm/issues/31496) and [a pull request](https://github.com/helm/helm/pull/31524) to fix this in Helm itself. Until it's merged, this plugin provides the solution.
 
+### ✨ Key Benefits
 
-And of course because the plugin does proper resolution of local chain dependencies.
-
----
-
-## Installation
-
-```shell
-helm plugin install --version "main" https://github.com/Noksa/helm-resolve-deps.git
-```
-
-To install old (bash-style) version, use the following command:
-```shell
-helm plugin install --version "v1.0.0" https://github.com/Noksa/helm-resolve-deps.git
-```
+| Feature                        | Description                                              |
+|--------------------------------|----------------------------------------------------------|
+| 🔄 **Chain Resolution**        | Recursively resolves local (`file://`) dependencies      |
+| ⚡ **Parallel Processing**     | Multi-threaded dependency resolution                     |
+| 📦 **Unpack Mode**             | Extract `.tgz` archives for debugging                    |
+| 🧹 **Clean Mode**              | Remove old dependencies before updating                  |
+| 🎯 **Selective Refresh**       | Skip repository updates for specific charts              |
 
 ---
 
-## Upgrade
+## 📋 Requirements
 
-The best way to do it - reinstall it
-
-If you encounter a problem during installation, try to remove helm plugins cache first
-```
-(h plugin uninstall resolve-deps || true) && h plugin install --version "main" https://github.com/Noksa/helm-resolve-deps.git
-```
+- 🎯 **Helm 3** installed on host machine
 
 ---
 
-## Usage
-Run this command to receive all available options:
-```shell
-helm resolve-deps -h
-```
-You can pass all flags from `helm dependency update` command to the plugin's command.
+## 🚀 Installation
 
-They  all will be substituted to `helm dependency update`.
-
-To do that, use `--` as end for flags parsing and pass arguments after it:
-```shell
-helm resolve-deps path_to_chart -- --kubeconfig myconfig
+```bash
+(helm plugin uninstall resolve-deps || true) && helm plugin install https://github.com/Noksa/helm-resolve-deps.git
 ```
+
+> 💡 **Helm 4 users**: Add `--verify=false` flag to the install command
 
 ---
 
-## Custom flags
-This plugin has its own flags. You can pass them in addition to `helm dep up` flags or without them.
-```shell
--u[--untar]                   - untar/unpack dependent charts. They will be present as directories instead of .tgz archieves. Useful for debugging purposes
--c[--clean]                   - remove charts, tmpcharts directories and Chart.lock file in each chart before running the dependency update command
---skip-refresh-in name1,name2 - skip fetching updates from helm repositories before running 'helm dep up' in specific charts (pass their names in the argument)
---skip-refresh                - skip fetching updated from helm repositories
+## 📖 Usage
+
+### 🔍 Getting Help
+
+```bash
+helm resolve-deps --help
 ```
+
+### 🎯 Basic Syntax
+
+```bash
+helm resolve-deps [PATH] [FLAGS]
+```
+
+### 🔧 Available Flags
+
+| Flag                  | Short | Description                                              |
+|-----------------------|-------|----------------------------------------------------------|
+| `--untar`             | `-u`  | Unpack dependent charts as directories instead of `.tgz` |
+| `--clean`             | `-c`  | Remove `charts/`, `tmpcharts/`, and `Chart.lock`         |
+| `--skip-refresh`      |       | Skip fetching updates from Helm repositories             |
+| `--skip-refresh-in`   |       | Skip refresh for specific charts (comma-separated)       |
+| `--threads`           |       | Number of parallel workers (default: CPU count - 1)      |
+| `--help`              | `-h`  | Show help                                                |
 
 ---
 
-## A few examples:
-```shell
+## ⚙️ How It Works
+
+Given this structure:
+```
+parent-chart/
+├── Chart.yaml (depends on child-chart via file://)
+└── charts/
+    └── child-chart/
+        └── Chart.yaml (depends on grandchild-chart via file://)
+```
+
+Running `helm resolve-deps parent-chart` will:
+1. 🔍 **Discover** all local dependencies recursively
+2. 📦 **Resolve** grandchild-chart dependencies first
+3. 🔗 **Resolve** child-chart dependencies (including grandchild)
+4. ✅ **Resolve** parent-chart dependencies (including entire chain)
+
+---
+
+## 💡 Examples
+
+### 🔍 Basic Operations
+
+**Resolve dependencies in current directory**
+```bash
+helm resolve-deps .
+```
+
+**Resolve with repository refresh skipped**
+```bash
 helm resolve-deps . --skip-refresh
-# another way to pass --skip-refresh as 'helm dep up' flag directly:
-helm resolve-deps . -- --skip-refresh
-helm resolve-deps --clean
-helm resolve-deps ~/charts/my-chart --skip-refresh --untar
-helm resolve-deps ~/charts/my-chart --skip-refresh -u -c
-helm resolve-deps --skip-refresh-in my-chart1,my-second-chart
+```
+
+### 🧹 Clean Operations
+
+**Clean before resolving**
+```bash
+helm resolve-deps . --clean
+```
+
+**Clean and unpack dependencies**
+```bash
+helm resolve-deps . --clean --untar
+```
+
+### ⚡ Performance Optimization
+
+**Use multiple threads**
+```bash
+# Use 4 parallel workers
+helm resolve-deps . --threads 4
+```
+
+**Skip refresh for specific charts**
+```bash
+# Skip refresh for chart1 and chart2
+helm resolve-deps . --skip-refresh-in chart1,chart2
+```
+
+### 🔧 Advanced Usage
+
+**Unpack dependencies for debugging**
+```bash
+# Extract all .tgz files to directories
+helm resolve-deps ~/charts/my-chart --untar
+```
+
+> 💡 **Tip**: Use `--untar` to inspect and modify dependent charts directly in the `charts/` directory
+
+**Pass additional flags to helm dependency update**
+```bash
+# Pass flags after --
+helm resolve-deps . -- --kubeconfig myconfig
+```
+
+**Full example with all options**
+```bash
+helm resolve-deps ~/charts/my-chart \
+  --clean \
+  --untar \
+  --skip-refresh-in my-chart1,my-chart2 \
+  --threads 4
+```
+
+---
+
+## 🧪 Testing
+
+```bash
+make test
+```
+
+---
+
+## 🔍 Linting
+
+```bash
+make lint
 ```
