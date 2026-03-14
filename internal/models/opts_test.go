@@ -1,56 +1,60 @@
 package models
 
-import "testing"
+import (
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+)
 
-func TestHelmResolveDepsOptions_Defaults(t *testing.T) {
-	opts := HelmResolveDepsOptions{}
+var _ = Describe("HelmResolveDepsOptions", func() {
+	Context("with zero-value defaults", func() {
+		var opts HelmResolveDepsOptions
 
-	if opts.Clean {
-		t.Error("expected Clean to be false by default")
-	}
-	if opts.Untar {
-		t.Error("expected Untar to be false by default")
-	}
-	if opts.SkipRefresh {
-		t.Error("expected SkipRefresh to be false by default")
-	}
-	if opts.Threads != 0 {
-		t.Errorf("expected Threads to be 0 by default, got %d", opts.Threads)
-	}
-	if len(opts.SkipRefreshInCharts) != 0 {
-		t.Errorf("expected SkipRefreshInCharts to be empty, got %v", opts.SkipRefreshInCharts)
-	}
-	if len(opts.Args) != 0 {
-		t.Errorf("expected Args to be empty, got %v", opts.Args)
-	}
-}
+		BeforeEach(func() {
+			opts = HelmResolveDepsOptions{}
+		})
 
-func TestHelmResolveDepsOptions_WithValues(t *testing.T) {
-	opts := HelmResolveDepsOptions{
-		Clean:               true,
-		Untar:               true,
-		SkipRefresh:         true,
-		SkipRefreshInCharts: []string{"chart1", "chart2"},
-		Threads:             4,
-		Args:                []string{"--debug", "--dry-run"},
-	}
+		It("should have Clean disabled", func() {
+			Expect(opts.Clean).To(BeFalse())
+		})
 
-	if !opts.Clean {
-		t.Error("expected Clean to be true")
-	}
-	if !opts.Untar {
-		t.Error("expected Untar to be true")
-	}
-	if !opts.SkipRefresh {
-		t.Error("expected SkipRefresh to be true")
-	}
-	if opts.Threads != 4 {
-		t.Errorf("expected Threads to be 4, got %d", opts.Threads)
-	}
-	if len(opts.SkipRefreshInCharts) != 2 {
-		t.Errorf("expected 2 charts in SkipRefreshInCharts, got %d", len(opts.SkipRefreshInCharts))
-	}
-	if len(opts.Args) != 2 {
-		t.Errorf("expected 2 args, got %d", len(opts.Args))
-	}
-}
+		It("should have Untar disabled", func() {
+			Expect(opts.Untar).To(BeFalse())
+		})
+
+		It("should have SkipRefresh disabled", func() {
+			Expect(opts.SkipRefresh).To(BeFalse())
+		})
+
+		It("should have zero Threads", func() {
+			Expect(opts.Threads).To(BeZero())
+		})
+
+		It("should have empty SkipRefreshInCharts", func() {
+			Expect(opts.SkipRefreshInCharts).To(BeEmpty())
+		})
+
+		It("should have empty Args", func() {
+			Expect(opts.Args).To(BeEmpty())
+		})
+	})
+
+	Context("with explicit values", func() {
+		It("should retain all configured fields", func() {
+			opts := HelmResolveDepsOptions{
+				Clean:               true,
+				Untar:               true,
+				SkipRefresh:         true,
+				SkipRefreshInCharts: []string{"chart1", "chart2"},
+				Threads:             4,
+				Args:                []string{"--debug", "--dry-run"},
+			}
+
+			Expect(opts.Clean).To(BeTrue())
+			Expect(opts.Untar).To(BeTrue())
+			Expect(opts.SkipRefresh).To(BeTrue())
+			Expect(opts.Threads).To(Equal(4))
+			Expect(opts.SkipRefreshInCharts).To(HaveLen(2))
+			Expect(opts.Args).To(HaveLen(2))
+		})
+	})
+})

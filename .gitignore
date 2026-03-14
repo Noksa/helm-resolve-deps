@@ -4,3 +4,5 @@ generated/
 helm-resolve-deps
 helm-resolve-deps.exe
 coverage.out
+coverage.html
+.cyber.sh

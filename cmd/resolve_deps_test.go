@@ -3,46 +3,36 @@ package main
 import (
 	"os"
 	"path/filepath"
-	"testing"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	"github.com/noksa/helm-resolve-deps/internal/helpers"
 	"github.com/noksa/helm-resolve-deps/internal/models"
 )
 
-func TestIntegration_LocalDependencies(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping integration test in short mode")
-	}
+var _ = Describe("Integration: Local Dependencies", func() {
+	var tmpDir string
 
-	tmpDir := t.TempDir()
+	BeforeEach(func() {
+		tmpDir = GinkgoT().TempDir()
+	})
 
-	// Create a child chart
-	childDir := filepath.Join(tmpDir, "child-chart")
-	if err := os.MkdirAll(childDir, 0755); err != nil {
-		t.Fatal(err)
-	}
+	Context("when a parent chart has a local dependency", func() {
+		var parentDir string
 
-	childChartYAML := `apiVersion: v2
+		BeforeEach(func() {
+			childDir := filepath.Join(tmpDir, "child-chart")
+			Expect(os.MkdirAll(filepath.Join(childDir, "templates"), 0755)).To(Succeed())
+			Expect(os.WriteFile(filepath.Join(childDir, "Chart.yaml"), []byte(`apiVersion: v2
 name: child-chart
 version: 1.0.0
 type: application
-`
-	if err := os.WriteFile(filepath.Join(childDir, "Chart.yaml"), []byte(childChartYAML), 0644); err != nil {
-		t.Fatal(err)
-	}
+`), 0644)).To(Succeed())
 
-	// Create templates directory for child
-	if err := os.MkdirAll(filepath.Join(childDir, "templates"), 0755); err != nil {
-		t.Fatal(err)
-	}
-
-	// Create a parent chart with local dependency
-	parentDir := filepath.Join(tmpDir, "parent-chart")
-	if err := os.MkdirAll(parentDir, 0755); err != nil {
-		t.Fatal(err)
-	}
-
-	parentChartYAML := `apiVersion: v2
+			parentDir = filepath.Join(tmpDir, "parent-chart")
+			Expect(os.MkdirAll(filepath.Join(parentDir, "templates"), 0755)).To(Succeed())
+			Expect(os.WriteFile(filepath.Join(parentDir, "Chart.yaml"), []byte(`apiVersion: v2
 name: parent-chart
 version: 1.0.0
 type: application
@@ -50,68 +40,42 @@ dependencies:
   - name: child-chart
     version: 1.0.0
     repository: file://../child-chart
-`
-	if err := os.WriteFile(filepath.Join(parentDir, "Chart.yaml"), []byte(parentChartYAML), 0644); err != nil {
-		t.Fatal(err)
-	}
+`), 0644)).To(Succeed())
+		})
 
-	// Create templates directory for parent
-	if err := os.MkdirAll(filepath.Join(parentDir, "templates"), 0755); err != nil {
-		t.Fatal(err)
-	}
+		It("should load the parent chart", func() {
+			chart, err := helpers.LoadChartByPath(parentDir)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(chart.Name).To(Equal("parent-chart"))
+		})
 
-	// Test loading the parent chart
-	chart, err := helpers.LoadChartByPath(parentDir)
-	if err != nil {
-		t.Fatalf("failed to load parent chart: %v", err)
-	}
+		It("should detect the local dependency", func() {
+			chart, err := helpers.LoadChartByPath(parentDir)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(chart.Dependencies).To(HaveLen(1))
+			Expect(chart.Dependencies[0].Name).To(Equal("child-chart"))
+			Expect(chart.Dependencies[0].Repository).To(Equal("file://../child-chart"))
+		})
+	})
+})
 
-	if chart.Name != "parent-chart" {
-		t.Errorf("expected chart name 'parent-chart', got '%s'", chart.Name)
-	}
+var _ = Describe("Integration: Chain Dependencies", func() {
+	It("should load transitive dependency chains", func() {
+		tmpDir := GinkgoT().TempDir()
 
-	if len(chart.Dependencies) != 1 {
-		t.Fatalf("expected 1 dependency, got %d", len(chart.Dependencies))
-	}
-
-	dep := chart.Dependencies[0]
-	if dep.Name != "child-chart" {
-		t.Errorf("expected dependency name 'child-chart', got '%s'", dep.Name)
-	}
-	if dep.Repository != "file://../child-chart" {
-		t.Errorf("expected repository 'file://../child-chart', got '%s'", dep.Repository)
-	}
-}
-
-func TestIntegration_ChainDependencies(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping integration test in short mode")
-	}
-
-	tmpDir := t.TempDir()
-
-	// Create grandchild chart (no dependencies)
-	grandchildDir := filepath.Join(tmpDir, "grandchild-chart")
-	if err := os.MkdirAll(filepath.Join(grandchildDir, "templates"), 0755); err != nil {
-		t.Fatal(err)
-	}
-
-	grandchildYAML := `apiVersion: v2
+		// grandchild
+		grandchildDir := filepath.Join(tmpDir, "grandchild-chart")
+		Expect(os.MkdirAll(filepath.Join(grandchildDir, "templates"), 0755)).To(Succeed())
+		Expect(os.WriteFile(filepath.Join(grandchildDir, "Chart.yaml"), []byte(`apiVersion: v2
 name: grandchild-chart
 version: 1.0.0
 type: application
-`
-	if err := os.WriteFile(filepath.Join(grandchildDir, "Chart.yaml"), []byte(grandchildYAML), 0644); err != nil {
-		t.Fatal(err)
-	}
+`), 0644)).To(Succeed())
 
-	// Create child chart (depends on grandchild)
-	childDir := filepath.Join(tmpDir, "child-chart")
-	if err := os.MkdirAll(filepath.Join(childDir, "templates"), 0755); err != nil {
-		t.Fatal(err)
-	}
-
-	childYAML := `apiVersion: v2
+		// child -> grandchild
+		childDir := filepath.Join(tmpDir, "child-chart")
+		Expect(os.MkdirAll(filepath.Join(childDir, "templates"), 0755)).To(Succeed())
+		Expect(os.WriteFile(filepath.Join(childDir, "Chart.yaml"), []byte(`apiVersion: v2
 name: child-chart
 version: 1.0.0
 type: application
@@ -119,18 +83,12 @@ dependencies:
   - name: grandchild-chart
     version: 1.0.0
     repository: file://../grandchild-chart
-`
-	if err := os.WriteFile(filepath.Join(childDir, "Chart.yaml"), []byte(childYAML), 0644); err != nil {
-		t.Fatal(err)
-	}
+`), 0644)).To(Succeed())
 
-	// Create parent chart (depends on child)
-	parentDir := filepath.Join(tmpDir, "parent-chart")
-	if err := os.MkdirAll(filepath.Join(parentDir, "templates"), 0755); err != nil {
-		t.Fatal(err)
-	}
-
-	parentYAML := `apiVersion: v2
+		// parent -> child
+		parentDir := filepath.Join(tmpDir, "parent-chart")
+		Expect(os.MkdirAll(filepath.Join(parentDir, "templates"), 0755)).To(Succeed())
+		Expect(os.WriteFile(filepath.Join(parentDir, "Chart.yaml"), []byte(`apiVersion: v2
 name: parent-chart
 version: 1.0.0
 type: application
@@ -138,120 +96,79 @@ dependencies:
   - name: child-chart
     version: 1.0.0
     repository: file://../child-chart
-`
-	if err := os.WriteFile(filepath.Join(parentDir, "Chart.yaml"), []byte(parentYAML), 0644); err != nil {
-		t.Fatal(err)
-	}
+`), 0644)).To(Succeed())
 
-	// Load and verify the chain
-	parentChart, err := helpers.LoadChartByPath(parentDir)
-	if err != nil {
-		t.Fatalf("failed to load parent chart: %v", err)
-	}
+		parentChart, err := helpers.LoadChartByPath(parentDir)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(parentChart.Dependencies).To(HaveLen(1))
 
-	if len(parentChart.Dependencies) != 1 {
-		t.Fatalf("expected 1 dependency in parent, got %d", len(parentChart.Dependencies))
-	}
+		childChart, err := helpers.LoadChartByPath(childDir)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(childChart.Dependencies).To(HaveLen(1))
+	})
+})
 
-	childChart, err := helpers.LoadChartByPath(childDir)
-	if err != nil {
-		t.Fatalf("failed to load child chart: %v", err)
-	}
-
-	if len(childChart.Dependencies) != 1 {
-		t.Fatalf("expected 1 dependency in child, got %d", len(childChart.Dependencies))
-	}
-}
-
-func TestOptions_CleanFlag(t *testing.T) {
-	tmpDir := t.TempDir()
-
-	chartYAML := `apiVersion: v2
+var _ = Describe("Options: Clean Flag", func() {
+	It("should remove charts, tmpcharts and Chart.lock", func() {
+		tmpDir := GinkgoT().TempDir()
+		Expect(os.WriteFile(filepath.Join(tmpDir, "Chart.yaml"), []byte(`apiVersion: v2
 name: test-chart
 version: 1.0.0
 type: application
-`
-	if err := os.WriteFile(filepath.Join(tmpDir, "Chart.yaml"), []byte(chartYAML), 0644); err != nil {
-		t.Fatal(err)
-	}
+`), 0644)).To(Succeed())
 
-	// Create directories that should be cleaned
-	chartsDir := filepath.Join(tmpDir, "charts")
-	tmpchartsDir := filepath.Join(tmpDir, "tmpcharts")
-	lockFile := filepath.Join(tmpDir, "Chart.lock")
+		chartsDir := filepath.Join(tmpDir, "charts")
+		tmpchartsDir := filepath.Join(tmpDir, "tmpcharts")
+		lockFile := filepath.Join(tmpDir, "Chart.lock")
 
-	if err := os.MkdirAll(chartsDir, 0755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.MkdirAll(tmpchartsDir, 0755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(lockFile, []byte("test"), 0644); err != nil {
-		t.Fatal(err)
-	}
+		Expect(os.MkdirAll(chartsDir, 0755)).To(Succeed())
+		Expect(os.MkdirAll(tmpchartsDir, 0755)).To(Succeed())
+		Expect(os.WriteFile(lockFile, []byte("test"), 0644)).To(Succeed())
 
-	opts := models.HelmResolveDepsOptions{
-		SkipRefresh: true,
-		Clean:       true,
-		Threads:     1,
-	}
+		opts := models.HelmResolveDepsOptions{
+			SkipRefresh: true,
+			Clean:       true,
+			Threads:     1,
+		}
+		_ = helpers.ResolveDependencies(tmpDir, opts)
 
-	// This will clean the directories
-	_ = helpers.ResolveDependencies(tmpDir, opts)
+		Expect(chartsDir).NotTo(BeADirectory())
+		Expect(tmpchartsDir).NotTo(BeADirectory())
+		Expect(lockFile).NotTo(BeAnExistingFile())
+	})
+})
 
-	// Verify directories were cleaned
-	if _, err := os.Stat(chartsDir); !os.IsNotExist(err) {
-		t.Error("charts directory should have been removed")
-	}
-	if _, err := os.Stat(tmpchartsDir); !os.IsNotExist(err) {
-		t.Error("tmpcharts directory should have been removed")
-	}
-	if _, err := os.Stat(lockFile); !os.IsNotExist(err) {
-		t.Error("Chart.lock file should have been removed")
-	}
-}
+var _ = Describe("Options: SkipRefreshInCharts", func() {
+	It("should accept skip-refresh-in option without error", func() {
+		tmpDir := GinkgoT().TempDir()
 
-func TestOptions_SkipRefreshInCharts(t *testing.T) {
-	tmpDir := t.TempDir()
-
-	childDir := filepath.Join(tmpDir, "child")
-	if err := os.MkdirAll(filepath.Join(childDir, "templates"), 0755); err != nil {
-		t.Fatal(err)
-	}
-
-	childYAML := `apiVersion: v2
+		childDir := filepath.Join(tmpDir, "child")
+		Expect(os.MkdirAll(filepath.Join(childDir, "templates"), 0755)).To(Succeed())
+		Expect(os.WriteFile(filepath.Join(childDir, "Chart.yaml"), []byte(`apiVersion: v2
 name: child-chart
 version: 1.0.0
-`
-	if err := os.WriteFile(filepath.Join(childDir, "Chart.yaml"), []byte(childYAML), 0644); err != nil {
-		t.Fatal(err)
-	}
+`), 0644)).To(Succeed())
 
-	parentDir := filepath.Join(tmpDir, "parent")
-	if err := os.MkdirAll(filepath.Join(parentDir, "templates"), 0755); err != nil {
-		t.Fatal(err)
-	}
-
-	parentYAML := `apiVersion: v2
+		parentDir := filepath.Join(tmpDir, "parent")
+		Expect(os.MkdirAll(filepath.Join(parentDir, "templates"), 0755)).To(Succeed())
+		Expect(os.WriteFile(filepath.Join(parentDir, "Chart.yaml"), []byte(`apiVersion: v2
 name: parent-chart
 version: 1.0.0
 dependencies:
   - name: child-chart
     version: 1.0.0
     repository: file://../child
-`
-	if err := os.WriteFile(filepath.Join(parentDir, "Chart.yaml"), []byte(parentYAML), 0644); err != nil {
-		t.Fatal(err)
-	}
+`), 0644)).To(Succeed())
 
-	opts := models.HelmResolveDepsOptions{
-		SkipRefresh:         true,
-		SkipRefreshInCharts: []string{"child-chart"},
-		Threads:             1,
-	}
+		opts := models.HelmResolveDepsOptions{
+			SkipRefresh:         true,
+			SkipRefreshInCharts: []string{"child-chart"},
+			Threads:             1,
+		}
 
-	err := helpers.ResolveDependencies(parentDir, opts)
-	if err != nil {
-		t.Logf("Expected behavior: %v", err)
-	}
-}
+		err := helpers.ResolveDependencies(parentDir, opts)
+		if err != nil {
+			GinkgoWriter.Printf("Expected behavior: %v\n", err)
+		}
+	})
+})

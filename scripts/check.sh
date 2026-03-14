@@ -1,19 +1,31 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC1091
 
-set -euo pipefail
+source "$(dirname "$(dirname "$(realpath "$0")")")/scripts/common.sh"
 
-cd "$(dirname "${BASH_SOURCE[0]}")/.."
+cyber_step "Lint & Format"
 
 if ! command -v goimports &>/dev/null; then
-    echo "Installing goimports..."
+    cyber_log "Installing goimports..."
     go install golang.org/x/tools/cmd/goimports@latest
 fi
 
+cyber_log "Running go mod tidy"
 go mod tidy
+
+cyber_log "Running go fmt"
 go fmt ./...
+
+cyber_log "Running goimports"
 goimports -w .
+
+cyber_log "Running go vet"
 go vet ./...
+
+cyber_log "Running modernize"
 go run golang.org/x/tools/go/analysis/passes/modernize/cmd/modernize@latest -fix ./...
+
+cyber_log "Running golangci-lint"
 golangci-lint run
 
-echo "✓ All checks passed"
+cyber_ok "All checks passed"

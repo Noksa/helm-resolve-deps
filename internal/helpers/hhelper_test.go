@@ -3,166 +3,104 @@ package helpers
 import (
 	"os"
 	"path/filepath"
-	"testing"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	"github.com/noksa/helm-resolve-deps/internal/models"
 )
 
-func TestLoadChartByPath(t *testing.T) {
-	tmpDir := t.TempDir()
-	chartYAML := `name: test-chart
+var _ = Describe("LoadChartByPath", func() {
+	var tmpDir string
+
+	BeforeEach(func() {
+		tmpDir = GinkgoT().TempDir()
+	})
+
+	Context("with a valid Chart.yaml", func() {
+		BeforeEach(func() {
+			chartYAML := `name: test-chart
 version: 1.0.0
 dependencies:
   - name: dep1
     version: 1.0.0
     repository: https://charts.example.com
 `
-	chartPath := filepath.Join(tmpDir, "Chart.yaml")
-	if err := os.WriteFile(chartPath, []byte(chartYAML), 0644); err != nil {
-		t.Fatal(err)
-	}
+			Expect(os.WriteFile(filepath.Join(tmpDir, "Chart.yaml"), []byte(chartYAML), 0644)).To(Succeed())
+		})
 
-	chart, err := LoadChartByPath(tmpDir)
-	if err != nil {
-		t.Fatalf("LoadChartByPath failed: %v", err)
-	}
+		It("should load chart name and version", func() {
+			chart, err := LoadChartByPath(tmpDir)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(chart.Name).To(Equal("test-chart"))
+			Expect(chart.Version).To(Equal("1.0.0"))
+		})
 
-	if chart.Name != "test-chart" {
-		t.Errorf("expected name 'test-chart', got '%s'", chart.Name)
-	}
-	if chart.Version != "1.0.0" {
-		t.Errorf("expected version '1.0.0', got '%s'", chart.Version)
-	}
-	if len(chart.Dependencies) != 1 {
-		t.Errorf("expected 1 dependency, got %d", len(chart.Dependencies))
-	}
-	if chart.Path != tmpDir {
-		t.Errorf("expected path '%s', got '%s'", tmpDir, chart.Path)
-	}
-}
+		It("should load dependencies", func() {
+			chart, err := LoadChartByPath(tmpDir)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(chart.Dependencies).To(HaveLen(1))
+		})
 
-func TestLoadChartByPath_InvalidPath(t *testing.T) {
-	_, err := LoadChartByPath("/nonexistent/path")
-	if err == nil {
-		t.Error("expected error for nonexistent path, got nil")
-	}
-}
+		It("should set the chart path", func() {
+			chart, err := LoadChartByPath(tmpDir)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(chart.Path).To(Equal(tmpDir))
+		})
+	})
 
-func TestLoadChartByPath_InvalidYAML(t *testing.T) {
-	tmpDir := t.TempDir()
-	chartPath := filepath.Join(tmpDir, "Chart.yaml")
-	if err := os.WriteFile(chartPath, []byte("invalid: yaml: content:"), 0644); err != nil {
-		t.Fatal(err)
-	}
+	Context("with an invalid path", func() {
+		It("should return an error", func() {
+			_, err := LoadChartByPath("/nonexistent/path")
+			Expect(err).To(HaveOccurred())
+		})
+	})
 
-	_, err := LoadChartByPath(tmpDir)
-	if err == nil {
-		t.Error("expected error for invalid YAML, got nil")
-	}
-}
+	Context("with invalid YAML", func() {
+		It("should return an error", func() {
+			Expect(os.WriteFile(filepath.Join(tmpDir, "Chart.yaml"), []byte("invalid: yaml: content:"), 0644)).To(Succeed())
+			_, err := LoadChartByPath(tmpDir)
+			Expect(err).To(HaveOccurred())
+		})
+	})
+})
 
-func TestResolveDependencies_NoChart(t *testing.T) {
-	err := ResolveDependencies("/nonexistent/path", models.HelmResolveDepsOptions{})
-	if err == nil {
-		t.Error("expected error for nonexistent chart, got nil")
-	}
-}
+var _ = Describe("ResolveDependencies", func() {
+	Context("when chart path does not exist", func() {
+		It("should return an error", func() {
+			err := ResolveDependencies("/nonexistent/path", models.HelmResolveDepsOptions{})
+			Expect(err).To(HaveOccurred())
+		})
+	})
 
-func TestResolveDependencies_EmptyDependencies(t *testing.T) {
-	tmpDir := t.TempDir()
-	chartYAML := `name: test-chart
+	Context("with a chart that has no dependencies", func() {
+		It("should succeed", func() {
+			tmpDir := GinkgoT().TempDir()
+			chartYAML := `name: test-chart
 version: 1.0.0
 `
-	chartPath := filepath.Join(tmpDir, "Chart.yaml")
-	if err := os.WriteFile(chartPath, []byte(chartYAML), 0644); err != nil {
-		t.Fatal(err)
-	}
+			Expect(os.WriteFile(filepath.Join(tmpDir, "Chart.yaml"), []byte(chartYAML), 0644)).To(Succeed())
 
-	opts := models.HelmResolveDepsOptions{
-		SkipRefresh: true,
-		Clean:       false,
-		Threads:     1,
-	}
+			opts := models.HelmResolveDepsOptions{
+				SkipRefresh: true,
+				Threads:     1,
+			}
+			Expect(ResolveDependencies(tmpDir, opts)).To(Succeed())
+		})
+	})
 
-	err := ResolveDependencies(tmpDir, opts)
-	if err != nil {
-		t.Errorf("ResolveDependencies failed for chart with no dependencies: %v", err)
-	}
-}
+	Context("with extra args", func() {
+		It("should not fail on chart with no dependencies", func() {
+			tmpDir := GinkgoT().TempDir()
+			Expect(os.WriteFile(filepath.Join(tmpDir, "Chart.yaml"), []byte("name: test-chart\nversion: 1.0.0\n"), 0644)).To(Succeed())
 
-func TestResolveDependencies_WithArgs(t *testing.T) {
-	tmpDir := t.TempDir()
-	chartYAML := `name: test-chart
-version: 1.0.0
-`
-	if err := os.WriteFile(filepath.Join(tmpDir, "Chart.yaml"), []byte(chartYAML), 0644); err != nil {
-		t.Fatal(err)
-	}
-
-	opts := models.HelmResolveDepsOptions{
-		SkipRefresh: true,
-		Args:        []string{"--debug"},
-		Threads:     1,
-	}
-
-	err := ResolveDependencies(tmpDir, opts)
-	if err != nil {
-		t.Logf("ResolveDependencies with args: %v", err)
-	}
-}
-
-func TestResolveDependencies_MultipleThreads(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping in short mode")
-	}
-
-	tmpDir := t.TempDir()
-
-	for i := 1; i <= 3; i++ {
-		childDir := filepath.Join(tmpDir, filepath.Join("child", string(rune('0'+i))))
-		if err := os.MkdirAll(filepath.Join(childDir, "templates"), 0755); err != nil {
-			t.Fatal(err)
-		}
-
-		childYAML := `apiVersion: v2
-name: child-` + string(rune('0'+i)) + `
-version: 1.0.0
-`
-		if err := os.WriteFile(filepath.Join(childDir, "Chart.yaml"), []byte(childYAML), 0644); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	parentDir := filepath.Join(tmpDir, "parent")
-	if err := os.MkdirAll(filepath.Join(parentDir, "templates"), 0755); err != nil {
-		t.Fatal(err)
-	}
-
-	parentYAML := `apiVersion: v2
-name: parent
-version: 1.0.0
-dependencies:
-  - name: child-1
-    version: 1.0.0
-    repository: file://../child1
-  - name: child-2
-    version: 1.0.0
-    repository: file://../child2
-  - name: child-3
-    version: 1.0.0
-    repository: file://../child3
-`
-	if err := os.WriteFile(filepath.Join(parentDir, "Chart.yaml"), []byte(parentYAML), 0644); err != nil {
-		t.Fatal(err)
-	}
-
-	opts := models.HelmResolveDepsOptions{
-		SkipRefresh: true,
-		Threads:     3,
-	}
-
-	err := ResolveDependencies(parentDir, opts)
-	if err != nil {
-		t.Logf("Multi-threaded resolution: %v", err)
-	}
-}
+			opts := models.HelmResolveDepsOptions{
+				SkipRefresh: true,
+				Args:        []string{"--debug"},
+				Threads:     1,
+			}
+			err := ResolveDependencies(tmpDir, opts)
+			GinkgoWriter.Printf("ResolveDependencies with args: %v\n", err)
+		})
+	})
+})

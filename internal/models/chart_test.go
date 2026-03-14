@@ -1,13 +1,17 @@
 package models
 
 import (
-	"testing"
-
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	"gopkg.in/yaml.v3"
 )
 
-func TestMiniHelmChart_UnmarshalYAML(t *testing.T) {
-	yamlData := `
+var _ = Describe("MiniHelmChart", func() {
+	Context("when unmarshalling a full Chart.yaml", func() {
+		var chart MiniHelmChart
+
+		BeforeEach(func() {
+			yamlData := `
 name: my-chart
 version: 1.2.3
 dependencies:
@@ -23,48 +27,38 @@ dependencies:
     enabled: true
     alias: db
 `
+			Expect(yaml.Unmarshal([]byte(yamlData), &chart)).To(Succeed())
+		})
 
-	var chart MiniHelmChart
-	err := yaml.Unmarshal([]byte(yamlData), &chart)
-	if err != nil {
-		t.Fatalf("failed to unmarshal: %v", err)
-	}
+		It("should parse chart name and version", func() {
+			Expect(chart.Name).To(Equal("my-chart"))
+			Expect(chart.Version).To(Equal("1.2.3"))
+		})
 
-	if chart.Name != "my-chart" {
-		t.Errorf("expected name 'my-chart', got '%s'", chart.Name)
-	}
-	if chart.Version != "1.2.3" {
-		t.Errorf("expected version '1.2.3', got '%s'", chart.Version)
-	}
-	if len(chart.Dependencies) != 2 {
-		t.Fatalf("expected 2 dependencies, got %d", len(chart.Dependencies))
-	}
+		It("should parse all dependencies", func() {
+			Expect(chart.Dependencies).To(HaveLen(2))
+		})
 
-	dep1 := chart.Dependencies[0]
-	if dep1.Name != "nginx" {
-		t.Errorf("expected dependency name 'nginx', got '%s'", dep1.Name)
-	}
-	if dep1.Version != "1.0.0" {
-		t.Errorf("expected dependency version '1.0.0', got '%s'", dep1.Version)
-	}
+		It("should parse the first dependency correctly", func() {
+			dep := chart.Dependencies[0]
+			Expect(dep.Name).To(Equal("nginx"))
+			Expect(dep.Version).To(Equal("1.0.0"))
+		})
 
-	dep2 := chart.Dependencies[1]
-	if dep2.Condition != "postgres.enabled" {
-		t.Errorf("expected condition 'postgres.enabled', got '%s'", dep2.Condition)
-	}
-	if !dep2.Enabled {
-		t.Error("expected enabled to be true")
-	}
-	if dep2.Alias != "db" {
-		t.Errorf("expected alias 'db', got '%s'", dep2.Alias)
-	}
-	if len(dep2.Tags) != 1 || dep2.Tags[0] != "database" {
-		t.Errorf("expected tags ['database'], got %v", dep2.Tags)
-	}
-}
+		It("should parse dependency metadata", func() {
+			dep := chart.Dependencies[1]
+			Expect(dep.Condition).To(Equal("postgres.enabled"))
+			Expect(dep.Enabled).To(BeTrue())
+			Expect(dep.Alias).To(Equal("db"))
+			Expect(dep.Tags).To(ConsistOf("database"))
+		})
+	})
+})
 
-func TestDependency_LocalRepository(t *testing.T) {
-	yamlData := `
+var _ = Describe("Dependency", func() {
+	Context("with a local file:// repository", func() {
+		It("should preserve the repository path", func() {
+			yamlData := `
 name: parent-chart
 version: 1.0.0
 dependencies:
@@ -72,19 +66,10 @@ dependencies:
     version: 1.0.0
     repository: file://../local-chart
 `
-
-	var chart MiniHelmChart
-	err := yaml.Unmarshal([]byte(yamlData), &chart)
-	if err != nil {
-		t.Fatalf("failed to unmarshal: %v", err)
-	}
-
-	if len(chart.Dependencies) != 1 {
-		t.Fatalf("expected 1 dependency, got %d", len(chart.Dependencies))
-	}
-
-	dep := chart.Dependencies[0]
-	if dep.Repository != "file://../local-chart" {
-		t.Errorf("expected repository 'file://../local-chart', got '%s'", dep.Repository)
-	}
-}
+			var chart MiniHelmChart
+			Expect(yaml.Unmarshal([]byte(yamlData), &chart)).To(Succeed())
+			Expect(chart.Dependencies).To(HaveLen(1))
+			Expect(chart.Dependencies[0].Repository).To(Equal("file://../local-chart"))
+		})
+	})
+})

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+rm -rf ../generated
 mkdir -p ../generated
 cd ../generated
 version="$(cat ../plugin.yaml | grep "version" | cut -d '"' -f 2)"
